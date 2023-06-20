@@ -7,7 +7,9 @@ const FileUpload = () => {
   const [uploadStatus, setUploadStatus] = useState('');
   const [uploadPaused, setUploadPaused] = useState(false);
   const [uploadCancelToken, setUploadCancelToken] = useState(null);
-  const uploadedBytesRef = useRef(0); // Ref to store uploaded bytes
+  const uploadedBytesRef = useRef(0); 
+  const fileInputRef = useRef(null);
+
 
   useEffect(() => {
     if (uploadPaused) {
@@ -18,6 +20,40 @@ const FileUpload = () => {
   const handleFileSelect = (event) => {
     setSelectedFile(event.target.files[0]);
   };
+  
+// console.log(selectedFile.name)
+  useEffect(() => {
+    const handleTabClose = (event) => {
+      console.log("hi");
+      event.preventDefault();
+      event.returnValue = "";
+      
+      console.log(selectedFile, "selected file");
+      console.log({uploadStatus});
+
+    if(uploadStatus && uploadStatus !== 'Upload successful!'){
+      console.log("Hi");
+
+        // Create an object with necessary file details
+        const fileDetails = {
+          name: selectedFile.name,
+          type: selectedFile.type,
+          size: selectedFile.size,
+          // content: fileContent,
+        };
+    
+        // Store the file details object in localStorage using a specific key
+        localStorage.setItem('currentFile', JSON.stringify(fileDetails));
+   
+    };
+  }
+
+    window.addEventListener('beforeunload', handleTabClose);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleTabClose);
+    };
+  }, []);
 
   const handleFileUpload = async () => {
     if (selectedFile) {
@@ -33,23 +69,23 @@ const FileUpload = () => {
         const response = await axios.post('http://localhost:3000/api/upload', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
-            'Content-Range': `bytes ${uploadedBytesRef.current}-${selectedFile.size - 1}/${selectedFile.size}`,
+            'Content-Range': `bytes ${uploadedBytesRef.current}-${selectedFile.size}/${selectedFile.size}`,
           },
           onUploadProgress: (progressEvent) => {
             const totalBytes = selectedFile.size;
             const uploadedBytes = Math.min(progressEvent.loaded + uploadedBytesRef.current, totalBytes);
             const progress = Math.round((uploadedBytes * 100) / totalBytes);
             setUploadProgress(progress);
-            uploadedBytesRef.current = uploadedBytes; // Update the ref value
+            uploadedBytesRef.current = uploadedBytes; 
           },
           cancelToken: source.token,
         });
   
         setUploadStatus('Upload successful!');
-        console.log(response.data); // Server response
+        console.log(response.data); 
       } catch (error) {
         if (axios.isCancel(error)) {
-          console.log('Upload cancelled');
+          console.log('Upload cancelled', uploadedBytes, progress);
           setUploadStatus('Upload cancelled');
         } else {
           console.error('Error during upload: ', error);
@@ -72,9 +108,17 @@ const FileUpload = () => {
     handleFileUpload();
   };
 
+  useEffect(() => {
+    const file = localStorage.getItem("fileName")
+    if (file) {
+      console.log(file);
+      // fileInputRef.current.files[0] = file;
+    }
+  }, []);
+
   return (
     <div>
-      <input type="file" onChange={handleFileSelect} />
+      <input type="file" ref={fileInputRef}  onChange={handleFileSelect} />
       <button onClick={handleFileUpload} disabled={uploadPaused}>
         Upload
       </button>
