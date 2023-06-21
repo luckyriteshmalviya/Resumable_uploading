@@ -9,6 +9,7 @@ const FileUpload = () => {
   const [uploadCancelToken, setUploadCancelToken] = useState(null);
   const uploadedBytesRef = useRef(0); 
   const fileInputRef = useRef(null);
+  const [filesToBeUploaded, setFilesToBeUploaded] = useState([])
 
 
   useEffect(() => {
@@ -20,40 +21,65 @@ const FileUpload = () => {
   const handleFileSelect = (event) => {
     setSelectedFile(event.target.files[0]);
   };
+
+  const resumeFileUpload = (e)=>{
+    console.log(e);
+    setSelectedFile()
+  }
   
-// console.log(selectedFile.name)
   useEffect(() => {
     const handleTabClose = (event) => {
       console.log("hi");
       event.preventDefault();
       event.returnValue = "";
       
-      console.log(selectedFile, "selected file");
+      console.log("selectedFile", selectedFile);
       console.log({uploadStatus});
 
     if(uploadStatus && uploadStatus !== 'Upload successful!'){
-      console.log("Hi");
+      console.log("InsideIfCondition");
 
-        // Create an object with necessary file details
-        const fileDetails = {
-          name: selectedFile.name,
-          type: selectedFile.type,
-          size: selectedFile.size,
-          // content: fileContent,
-        };
+      let filesToBeUploaded = JSON.parse(localStorage.getItem('currentFiles')) || [];
+
+      // localStorage.removeItem('currentFile');
+
+      console.log({filesToBeUploaded});
+
+      for(let i = 0; i < filesToBeUploaded.length; i++) {
+        console.log(filesToBeUploaded[i].name);
+      if(filesToBeUploaded[i].name === selectedFile.name){
+        filesToBeUploaded[i].uploaded = uploadedBytesRef.current
+      }}
+
+//       const reader = new FileReader();
+//     reader.onload = function() {
+//   const dataURL = reader.result;
+//   console.log(dataURL, "------------------"); // Check if dataURL is assigned a value
+// };
+// reader.readAsDataURL(selectedFile);
+
+
+      const currentFileDetails = {
+        name: selectedFile.name,
+        file: dataURL,
+        size: selectedFile.size,
+        uploaded: uploadedBytesRef.current
+      };
+
+     let newFilesToBeUploaded = [currentFileDetails, ...filesToBeUploaded]
+     console.log({newFilesToBeUploaded});
     
-        // Store the file details object in localStorage using a specific key
-        localStorage.setItem('currentFile', JSON.stringify(fileDetails));
-   
+     localStorage.setItem('currentFiles', JSON.stringify(newFilesToBeUploaded));
     };
   }
 
-    window.addEventListener('beforeunload', handleTabClose);
+  if(uploadStatus && uploadStatus !== 'Upload successful!'){
+    window.addEventListener('beforeunload', handleTabClose);}
 
     return () => {
       window.removeEventListener('beforeunload', handleTabClose);
     };
-  }, []);
+  }, [uploadStatus]);
 
   const handleFileUpload = async () => {
     if (selectedFile) {
@@ -62,7 +88,7 @@ const FileUpload = () => {
   
       const source = axios.CancelToken.source();
       setUploadCancelToken(source);
-  
+      console.log("sourceToken:- ",source.token);
       try {
         setUploadStatus('Uploading...');
   
@@ -82,10 +108,10 @@ const FileUpload = () => {
         });
   
         setUploadStatus('Upload successful!');
-        console.log(response.data); 
+        console.log("responseData", response.data); 
       } catch (error) {
         if (axios.isCancel(error)) {
-          console.log('Upload cancelled', uploadedBytes, progress);
+          console.log('Upload cancelled');
           setUploadStatus('Upload cancelled');
         } else {
           console.error('Error during upload: ', error);
@@ -109,14 +135,15 @@ const FileUpload = () => {
   };
 
   useEffect(() => {
-    const file = localStorage.getItem("fileName")
+    const file = JSON.parse(localStorage.getItem("currentFiles"))
     if (file) {
-      console.log(file);
+      setFilesToBeUploaded(file)
       // fileInputRef.current.files[0] = file;
     }
   }, []);
 
   return (
+    <div style={{display: "flex", gap: "20rem"}}>
     <div>
       <input type="file" ref={fileInputRef}  onChange={handleFileSelect} />
       <button onClick={handleFileUpload} disabled={uploadPaused}>
@@ -130,6 +157,21 @@ const FileUpload = () => {
       </button>
       <div>{uploadProgress}% uploaded</div>
       <div>{uploadStatus}</div>
+    </div>
+    {filesToBeUploaded && <div>
+{filesToBeUploaded.map((file) =>{return(<li style={{margin:"2px", border: "1px solid black"}} key={file.name}>
+{file.name}
+<div >Total File Size :-{file.size}
+<br />
+       File Uploaded :- {file.uploaded} 
+       
+       <button onClick={(()=>{})} disabled={uploadPaused}>
+        Resume Uploading
+      </button></div>
+      
+</li>)})}
+
+    </div>}
     </div>
   );
 };
