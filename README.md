@@ -148,4 +148,4 @@ The purpose of why the **last modified timestamp** is stored is because if a use
 ## Feedback
 
  - Any suggestions or feedback to improve it, is most welcomed.
-If you have any feedback & queries, please reach out to us at ritesh.m@inhertix.com
+If you have any feedback & queries, please reach out to us at luckyriteshmalviya@gmail.com
